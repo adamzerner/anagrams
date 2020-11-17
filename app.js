@@ -2,7 +2,7 @@ const express = require("express");
 const _ = require("lodash");
 const app = express();
 const port = 3000;
-const getInput = (qs) => {
+const getWords = (qs) => {
   if (!qs.words) {
     return [];
   }
@@ -10,6 +10,7 @@ const getInput = (qs) => {
   return qs.words.split(",");
 };
 const getMap = (word) => {
+  // mapping of letters to count of the letter in the word
   const map = {};
   let char;
 
@@ -25,85 +26,62 @@ const getMap = (word) => {
 
   return map;
 };
+const getAnagrams = (words) => {
+  /*
 
-app.get("/v1/anagrams", (req, res) => {
-  const input = getInput(req.query).map((w) => w.toLowerCase());
-  // [ 'ate', 'bar', 'loop', 'pool', 'tea', 'pet', 'bar' ]
-  const maps = input.map(getMap);
-  // [ { a: 1, t: 1, e: 1 }, ... ]
+  Notes on time and space complexities:
+  - Using two loops takes O(n^2) time and I don't see how to avoid using two loops.
+  - The comparison in the inner loop is done in constant time since there is a fixed number of letters in the alphabet, and thus doesn't add to the time complexity.
+  - O(n) space is used.
+
+  */
+
+  const maps = words.map(getMap);
   const usedIndices = {};
-  const output = [];
+  const anagrams = [];
   let currMatchingWords;
 
-  for (let i = 0; i < input.length; i++) {
+  for (let i = 0; i < words.length; i++) {
     if (usedIndices[i]) {
       continue;
     }
 
-    currMatchingWords = [input[i]];
+    currMatchingWords = [words[i]];
 
-    for (let j = i + 1; j < input.length; j++) {
+    for (let j = i + 1; j < words.length; j++) {
       if (usedIndices[j]) {
         continue;
       }
 
       if (_.isEqual(maps[i], maps[j])) {
-        currMatchingWords.push(input[j]);
+        currMatchingWords.push(words[j]);
         usedIndices[j] = true;
       }
     }
 
-    output.push(currMatchingWords);
+    anagrams.push(currMatchingWords);
   }
 
+  return anagrams;
+};
+
+app.get("/v1/anagrams", (req, res) => {
+  const words = getWords(req.query).map((w) => w.toLowerCase());
+  const anagrams = getAnagrams(words);
+
   res.json({
-    anagrams: output,
+    anagrams,
   });
 });
 
 app.get("/v2/anagrams", (req, res) => {
-  const input = getInput(req.query);
-  // [ 'pot', 'Top', 'opt', 'owl', 'Low', 'owL' ]
-  const maps = input.map(getMap);
-  // [ { p: 1, o: 1, t: 1 }, ... ]
-  const usedIndices = {};
-  const output = [];
-  let currMatchingWords;
-
-  for (let i = 0; i < input.length; i++) {
-    if (usedIndices[i]) {
-      continue;
-    }
-
-    currMatchingWords = [input[i]];
-
-    for (let j = i + 1; j < input.length; j++) {
-      if (usedIndices[j]) {
-        continue;
-      }
-
-      if (_.isEqual(maps[i], maps[j])) {
-        currMatchingWords.push(input[j]);
-        usedIndices[j] = true;
-      }
-    }
-
-    output.push(currMatchingWords);
-  }
+  const words = getWords(req.query);
+  const anagrams = getAnagrams(words);
 
   res.json({
-    anagrams: output,
+    anagrams,
   });
 });
-
-/*
-
-Notes on time and space complexities:
-- Using two loops takes O(n^2) time and I don't see how to avoid using two loops.
-- The comparison in the inner loop is done in constand time since there is a fixed number of letters in the alphabet, and thus doesn't add to the time complexity.
-- O(n) space is used.
-
-*/
 
 app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);
