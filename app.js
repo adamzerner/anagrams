@@ -62,7 +62,38 @@ app.get("/v1/anagrams", (req, res) => {
 });
 
 app.get("/v2/anagrams", (req, res) => {
-  res.json("v2 anagrams!");
+  const input = getInput(req.query);
+  // [ 'pot', 'Top', 'opt', 'owl', 'Low', 'owL' ]
+  const maps = input.map(getMap);
+  // [ { p: 1, o: 1, t: 1 }, ... ]
+  const usedIndices = {};
+  const output = [];
+  let currMatchingWords;
+
+  for (let i = 0; i < input.length; i++) {
+    if (usedIndices[i]) {
+      continue;
+    }
+
+    currMatchingWords = [input[i]];
+
+    for (let j = i + 1; j < input.length; j++) {
+      if (usedIndices[j]) {
+        continue;
+      }
+
+      if (_.isEqual(maps[i], maps[j])) {
+        currMatchingWords.push(input[j]);
+        usedIndices[j] = true;
+      }
+    }
+
+    output.push(currMatchingWords);
+  }
+
+  res.json({
+    anagrams: output,
+  });
 });
 
 /*
